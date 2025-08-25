@@ -1,6 +1,7 @@
 # vim-smart-idf-button
 
-A Vim plugin for streamlined ESP-IDF development with smart build detection and seamless monitoring.
+A Vim plugin for streamlined ESP-IDF development with smart build/flash/monitor
+functions and seamless monitoring (the actual button(s) is decided by you).
 
 ## Features
 
@@ -8,7 +9,7 @@ A Vim plugin for streamlined ESP-IDF development with smart build detection and 
 - **Multi-Project Support**: Handles multiple ESP-IDF projects in subdirectories
 - **Seamless Monitoring**: Automatically stops existing monitors before starting new ones
 - **Terminal Integration**: Uses Vim's built-in terminal for monitoring with proper focus management
-- **Build Separation**: Builds run in quickfix window, monitoring in terminal
+- **Build Separation**: Builds run in quickfix window, flash and monitoring in terminal
 
 ## Requirements
 
@@ -55,7 +56,7 @@ call smart_idf_button#stop_monitor()
 
 ### Example Key Mappings
 
-Add these to your `ftplugin/c.vim` or `ftplugin/cpp.vim`:
+Add these to your `ftplugin/c.vim` or `ftplugin/cpp.vim` or `.vimrc`:
 
 ```vim
 " F5: Build ESP-IDF project
@@ -111,7 +112,7 @@ When multiple projects are found, it presents a selection menu.
 
 **F7 (Smart Launch) behavior:**
 1. Automatically stops any running monitor
-2. Checks if build is needed
+2. Checks if build is needed (or if manual build was just done)
 3. If build needed: Build in quickfix → Flash+Monitor in terminal
 4. If no build needed: Monitor in terminal
 
@@ -131,7 +132,7 @@ The plugin also provides these commands:
 
 ## Configuration
 
-Currently no configuration options are needed. The plugin works out of the box with standard ESP-IDF project structures.
+Currently no configuration options are needed. The plugin (should) work out of the box with standard ESP-IDF project structures.
 
 ## License
 

@@ -1,0 +1,145 @@
+*smart_idf_button.txt*  Smart ESP-IDF development helper for Vim
+
+                    VIM-SMART-IDF-BUTTON MANUAL
+
+Author: Your Name
+Version: 1.0.0
+License: MIT
+
+==============================================================================
+CONTENTS                                                *smart-idf-button-contents*
+
+    1. Introduction ........................ |smart-idf-button-introduction|
+    2. Requirements ........................ |smart-idf-button-requirements|
+    3. Installation ........................ |smart-idf-button-installation|
+    4. Usage ............................... |smart-idf-button-usage|
+    5. Functions ........................... |smart-idf-button-functions|
+    6. Commands ............................ |smart-idf-button-commands|
+    7. Examples ............................ |smart-idf-button-examples|
+
+==============================================================================
+1. INTRODUCTION                                    *smart-idf-button-introduction*
+
+vim-smart-idf-button is a Vim plugin designed to streamline ESP-IDF 
+development with intelligent build detection and seamless monitoring 
+capabilities.
+
+Key features:
+- Smart build detection based on file timestamps
+- Multi-project support for complex ESP-IDF workspaces
+- Automatic monitor management (stop existing before starting new)
+- Terminal integration with proper focus management
+- Separation of build (quickfix) and monitoring (terminal) workflows
+
+==============================================================================
+2. REQUIREMENTS                                    *smart-idf-button-requirements*
+
+- Vim 8.0+ with terminal support
+- vim-asyncrun plugin: https://github.com/skywind3000/asyncrun.vim
+- ESP-IDF toolchain properly installed and configured
+
+==============================================================================
+3. INSTALLATION                                    *smart-idf-button-installation*
+
+Using vim-plug: >
+    Plug 'yourusername/vim-smart-idf-button'
+<
+
+Manual installation:
+Clone to your Vim plugins directory: >
+    cd ~/.vim/pack/plugins/start/
+    git clone https://github.com/yourusername/vim-smart-idf-button.git
+<
+
+==============================================================================
+4. USAGE                                                  *smart-idf-button-usage*
+
+The plugin detects ESP-IDF projects by looking for `sdkconfig` files in the
+current directory and subdirectories. When multiple projects are found, it
+presents a selection menu.
+
+Typical workflow:
+1. Open a file in your ESP-IDF project
+2. Use |smart_idf_button#launch()| to build+flash+monitor or just monitor
+3. Use |smart_idf_button#stop_monitor()| to stop monitoring
+4. Use |smart_idf_button#build()| for build-only operations
+
+==============================================================================
+5. FUNCTIONS                                            *smart-idf-button-functions*
+
+smart_idf_button#build()                              *smart_idf_button#build()*
+    Build the current ESP-IDF project. Presents a selection menu if multiple
+    projects are found. Returns 1 on success, 0 on failure/cancellation.
+
+smart_idf_button#launch()                            *smart_idf_button#launch()*
+    Smart launch function:
+    - Automatically stops any running monitor
+    - Checks if build is needed based on file timestamps
+    - If build needed: builds in quickfix, then flash+monitor in terminal
+    - If no build needed: just monitor in terminal
+    Returns 1 on success, 0 on failure/cancellation.
+
+smart_idf_button#monitor()                          *smart_idf_button#monitor()*
+    Start monitoring without build/flash. Uses terminal with proper focus
+    management. Returns 1 on success, 0 on failure/cancellation.
+
+smart_idf_button#stop_monitor()              *smart_idf_button#stop_monitor()*
+    Stop any running monitor by sending Ctrl+] to terminal buffers.
+    Returns 1 if monitor was found and stopped, 0 if no monitor found.
+
+smart_idf_button#has_idf_projects()      *smart_idf_button#has_idf_projects()*
+    Returns 1 if ESP-IDF projects are detected, 0 otherwise.
+
+smart_idf_button#get_idf_projects()      *smart_idf_button#get_idf_projects()*
+    Returns [current_has_sdkconfig, project_dirs] where:
+    - current_has_sdkconfig: 1 if current directory has sdkconfig
+    - project_dirs: list of subdirectories containing sdkconfig
+
+smart_idf_button#needs_build({project_dir})  *smart_idf_button#needs_build()*
+    Check if build is needed for {project_dir}. Compares timestamps of
+    source files against generated binaries. Returns 1 if build needed.
+
+==============================================================================
+6. COMMANDS                                            *smart-idf-button-commands*
+
+:SmartIDFBuild                                              *:SmartIDFBuild*
+    Equivalent to |smart_idf_button#build()|
+
+:SmartIDFLaunch                                            *:SmartIDFLaunch*
+    Equivalent to |smart_idf_button#launch()|
+
+:SmartIDFMonitor                                          *:SmartIDFMonitor*
+    Equivalent to |smart_idf_button#monitor()|
+
+:SmartIDFStopMonitor                                  *:SmartIDFStopMonitor*
+    Equivalent to |smart_idf_button#stop_monitor()|
+
+==============================================================================
+7. EXAMPLES                                            *smart-idf-button-examples*
+
+Basic key mappings in ftplugin/c.vim or ftplugin/cpp.vim: >
+    nnoremap <F5> :call smart_idf_button#build()<CR>
+    nnoremap <F6> :call smart_idf_button#stop_monitor()<CR>
+    nnoremap <F7> :call smart_idf_button#launch()<CR>
+    nnoremap <F8> :call smart_idf_button#monitor()<CR>
+<
+
+Conditional mapping based on project detection: >
+    if smart_idf_button#has_idf_projects()
+        nnoremap <F7> :call smart_idf_button#launch()<CR>
+    endif
+<
+
+Integrating with existing build systems: >
+    function! SmartBuild()
+        if smart_idf_button#has_idf_projects()
+            call smart_idf_button#build()
+        else
+            " Fall back to regular make/cmake
+            execute 'AsyncRun make'
+        endif
+    endfunction
+    nnoremap <F5> :call SmartBuild()<CR>
+<
+
+vim:tw=78:ts=8:ft=help:norl:

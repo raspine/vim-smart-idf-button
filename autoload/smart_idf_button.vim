@@ -5,6 +5,42 @@
 let s:pending_flash_project_dir = ""
 let s:last_build_was_manual = 0
 
+" Helper function to detect available USB serial ports
+function! s:detect_usb_port()
+    " Check common USB serial device patterns
+    " First try ttyUSB* (most common with UART bridges)
+    let l:usb_ports = glob('/dev/ttyUSB*', 0, 1)
+    if !empty(l:usb_ports)
+        return l:usb_ports[0]
+    endif
+    
+    " Then try ttyACM* (boards with native USB like Arduino)
+    let l:acm_ports = glob('/dev/ttyACM*', 0, 1)
+    if !empty(l:acm_ports)
+        return l:acm_ports[0]
+    endif
+    
+    " No USB port found
+    return ''
+endfunction
+
+" Helper function to build port argument string
+function! s:get_port_arg()
+    " If user has manually configured a port, use it
+    if exists('g:smart_idf_button_port') && g:smart_idf_button_port != ''
+        return ' -p ' . g:smart_idf_button_port
+    endif
+    
+    " Otherwise, try to auto-detect USB ports
+    let l:detected_port = s:detect_usb_port()
+    if l:detected_port != ''
+        return ' -p ' . l:detected_port
+    endif
+    
+    " If no port found, return empty string (idf.py will do its own scanning)
+    return ''
+endfunction
+
 " Main API functions that can be called from outside
 
 " Build function - equivalent to your cmake_build_target for IDF projects
@@ -16,14 +52,14 @@ function! smart_idf_button#build()
     
     if l:sdkconfig_current
         " Current directory has sdkconfig - build directly
-        execute 'AsyncRun idf.py build'
+        execute 'AsyncRun idf.py' . s:get_port_arg() . ' build'
     elseif len(l:sdkconfig_dirs) > 0
         " Multiple sdkconfig files found, present selection menu
         let l:selected_dir = s:select_idf_project(l:sdkconfig_dirs)
         
         if l:selected_dir != ""
             " Run build in the selected directory
-            execute 'AsyncRun idf.py -C ' . l:selected_dir . ' build'
+            execute 'AsyncRun idf.py -C ' . l:selected_dir . s:get_port_arg() . ' build'
         else
             echo "Invalid selection or cancelled."
         endif
@@ -54,13 +90,13 @@ function! smart_idf_button#launch()
                 autocmd User AsyncRunStop call s:post_build_flash_monitor()
             else
                 " No build needed, but manual build was done - go straight to flash+monitor
-                execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py flash monitor'
+                execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py' . s:get_port_arg() . ' flash monitor'
                 " Clear the stored directory
                 let s:pending_flash_project_dir = ""
             endif
         else
             " No build needed, just monitor in terminal
-            execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py monitor'
+            execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py' . s:get_port_arg() . ' monitor'
         endif
     elseif len(l:sdkconfig_dirs) > 0
         " Multiple sdkconfig files found, present selection menu
@@ -79,13 +115,13 @@ function! smart_idf_button#launch()
                     autocmd User AsyncRunStop call s:post_build_flash_monitor()
                 else
                     " No build needed, but manual build was done - go straight to flash+monitor
-                    execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py -C ' . l:selected_dir . ' flash monitor'
+                    execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py -C ' . l:selected_dir . s:get_port_arg() . ' flash monitor'
                     " Clear the stored directory
                     let s:pending_flash_project_dir = ""
                 endif
             else
                 " No build needed, just monitor in terminal
-                execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py -C ' . l:selected_dir . ' monitor'
+                execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py -C ' . l:selected_dir . s:get_port_arg() . ' monitor'
             endif
         else
             echo "Invalid selection or cancelled."
@@ -103,12 +139,12 @@ function! smart_idf_button#monitor()
     let [l:sdkconfig_current, l:sdkconfig_dirs] = s:find_idf_projects()
     
     if l:sdkconfig_current
-        execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py monitor'
+        execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py' . s:get_port_arg() . ' monitor'
     elseif len(l:sdkconfig_dirs) > 0
         let l:selected_dir = s:select_idf_project(l:sdkconfig_dirs)
         
         if l:selected_dir != ""
-            execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py -C ' . l:selected_dir . ' monitor'
+            execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py -C ' . l:selected_dir . s:get_port_arg() . ' monitor'
         else
             echo "Invalid selection or cancelled."
             return 0
@@ -386,9 +422,9 @@ function! s:post_build_flash_monitor()
     
     " Run flash and monitor in terminal using the stored project directory
     if s:pending_flash_project_dir == "."
-        execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py flash monitor'
+        execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py' . s:get_port_arg() . ' flash monitor'
     else
-        execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py -C ' . s:pending_flash_project_dir . ' flash monitor'
+        execute 'AsyncRun -mode=term -pos=bottom -rows=20 -focus=0 idf.py -C ' . s:pending_flash_project_dir . s:get_port_arg() . ' flash monitor'
     endif
     
     " Clear the stored directory

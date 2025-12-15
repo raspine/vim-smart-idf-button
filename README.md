@@ -132,7 +132,26 @@ The plugin also provides these commands:
 
 ## Configuration
 
-Currently no configuration options are needed. The plugin (should) work out of the box with standard ESP-IDF project structures.
+### Port Configuration
+
+The plugin automatically detects ESP32 serial ports by scanning for USB devices. This is much faster than `idf.py`'s default behavior, which tries every legacy serial port before finding the actual device.
+
+**Auto-detection order:**
+1. `/dev/ttyUSB*` - USB UART bridges (most common)
+2. `/dev/ttyACM*` - Boards with native USB (Arduino-style)
+3. Falls back to `idf.py`'s auto-scanning if no USB ports found
+
+**No configuration needed in most cases!** However, if you have multiple USB devices connected or want to specify a specific port explicitly:
+
+```vim
+" In your .vimrc or init.vim
+let g:smart_idf_button_port = '/dev/ttyUSB0'
+```
+
+Setting `g:smart_idf_button_port` will bypass auto-detection and use the specified port. Common port values:
+- `/dev/ttyUSB0` - First USB UART device
+- `/dev/ttyACM0` - First native USB device
+- `COM3`, `COM4`, etc. - Windows ports
 
 ## License
 

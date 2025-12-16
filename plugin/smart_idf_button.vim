@@ -12,6 +12,11 @@ let g:loaded_smart_idf_button = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
+" Configuration defaults
+if !exists('g:smart_idf_button_port')
+    let g:smart_idf_button_port = ''
+endif
+
 " Plugin commands
 command! SmartIDFBuild call smart_idf_button#build()
 command! SmartIDFLaunch call smart_idf_button#launch()
